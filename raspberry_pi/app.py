@@ -28,25 +28,10 @@ import time
 import sys
 from threading import Thread
 
-# Import 3rd party modules
-import grovepi
-from grovepi import *
-from grove_rgb_lcd import *
-import paho.mqtt.client as mqtt
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-# Import self-written custom modules
-from dummy_data import generateRandom
-import env_vars
-
-# Define constants and variables
-# Digital input ports
-# SIG,NC,VCC,GND
-DHT_SENSOR_PORT = 8 # Temperature and Humidity sensor on D7
-LIGHT_SENSOR = 0 # Light sensor on A0
-DHT_SENSOR_TYPE = 0 #Input
-
-# Set IO modes
-grovepi.pinMode(LIGHT_SENSOR,"INPUT")
+from sensors import read_light_sensor, read_temperature_humidity
+import keys
 
 # State variables
 publishing = True
@@ -57,27 +42,18 @@ terminate = False
 
 # MQTT settings
 BROKER_ADDRESS = os.environ.get('BROKER_ADDRESS', 'No value set')
-LISTEN_CLIENT_ID = os.environ.get('LISTEN_CLIENT_ID', 'No value set')
-PUBLISH_CLIENT_ID = os.environ.get('PUBLISH_CLIENT_ID', 'No value set')
-TOPIC = os.environ.get('TOPIC', 'No value set')
-SUBSCRIBER = os.environ.get('SUBSCRIBER', 'No value set')
+BROKER_PORT = 8883
+CLIENT_ID = os.environ.get('CLIENT_ID', 'No value set')
+SUBSCRIBER_TOPIC = os.environ.get('SUBSCRIBER_TOPIC', 'No value set')
+PUBLISHER_TOPIC = os.environ.get('PUBLISHER_TOPIC', 'No value set')
 
 client = None
 
-
-def read_light_sensor():
-    # TODO: Enable actual functionality and remove random number generatore
-    return grovepi.analogRead(LIGHT_SENSOR)
-    #return generateRandom('illuminance')
-
-
-def read_temperature_humidity():
-    # TODO: Enable actual functionality and remove random number generatore
-    [temp, hum] = dht(DHT_SENSOR_PORT, DHT_SENSOR_TYPE)
-    print(temp)
-    return temp, hum
-    #return generateRandom('temperature'), generateRandom('humidity')
-
+data_construct = {
+    "state" : {
+        "desired" : {}
+     }
+}
 
 def last_message(client):
     """ Send a last response after disabling publishing or before closing the
@@ -85,9 +61,9 @@ def last_message(client):
 
     Returns nothing """
     readings = {
-        'pi1_timestamp': 0,
+        'timestamp': 0,
         'illuminance': read_light_sensor(),
-        'raspberry_pi': 1,
+        'thing_id': 1,
         'publishing': False,
     }
     client.publish(TOPIC, json.dumps(readings))
@@ -97,7 +73,7 @@ def last_message(client):
 def on_message(client, userdata, message):
     print('Message received=%s' % str(message.payload.decode('utf-8')))
     print('Message topic=%s' % (message.topic))
-    try:
+    """try:
         utf8_message = str(message.payload.decode('utf-8'))
         message = json.loads(utf8_message)
         global publishing
@@ -128,24 +104,24 @@ def on_message(client, userdata, message):
         print('The received message had an ill formed data object')
     except Exception as error:
         print('An error occurred')
-        print(error)
+        print(error)"""
 
 
 def publish():
     """ Read all sensors and publish the results to the MQTT broker """
     print("Publishing Thread")
-    client = start_client(PUBLISH_CLIENT_ID)
+    client = start_client(CLIENT_ID)
     while publishing:
         illuminance = read_light_sensor()
         temp, hum = read_temperature_humidity()
         readings = {
-            'pi1_timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'illuminance': read_light_sensor(),
             'temperature': temp,
             'humidity': hum,
             'raspberry_pi': 1
         }
-        client.publish(TOPIC, json.dumps(readings))
+        client.publish(PUBLISHER_TOPIC, json.dumps(readings))
         print('Published readings: ', readings)
         client.loop(.1)
         time.sleep(10)
@@ -156,8 +132,8 @@ def listen(publisher):
     """ Listen for new messages on subscribed topic, start the publisher and
 
     """
-    client = start_client(LISTEN_CLIENT_ID)
-    client.subscribe(SUBSCRIBER)
+    client = start_client(CLIENT_ID)
+    client.subscribe(SUBSCRIBER_TOPIC, 1, on_message)
     print('Subscribed to topic.')
     while listening:
         client.loop(.1)
@@ -168,16 +144,16 @@ def start_client(client_id):
     required MQTT methods.
 
     """
-    client = mqtt.Client(client_id)
-    client.connect(BROKER_ADDRESS)
-    # Set all custom MQTT methods
-    client.on_connect=on_connect
-    client.on_publish=on_publish
-    client.on_subscribe=on_subscribe
-    client.on_message=on_message
-    client.on_disconnect=on_disconnect
-    client.on_socket_close=on_socket_close
-    client.on_socket_unregister_write=on_socket_unregister_write 
+    client = AWSIoTMQTTClient(client_id)
+    # Configurations
+    # For TLS mutual authentication
+    client.configureEndpoint(BROKER_ADDRESS, BROKER_PORT)
+    client.configureCredentials("keys1/AmazonRootCA1.pem", "keys1/private.pem.key", "keys1/cert.pem.crt")
+    client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+    client.configureDrainingFrequency(2)  # Draining: 2 Hz
+    client.configureConnectDisconnectTimeout(10)  # 10 sec
+    client.configureMQTTOperationTimeout(5)  # 5 sec
+    client.connect() 
     return client
     
 
