@@ -27,6 +27,7 @@ import os
 import time
 import sys
 from threading import Thread
+from copy import deepcopy
 
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
@@ -47,6 +48,12 @@ CLIENT_ID = os.environ.get('CLIENT_ID', 'No value set')
 SUBSCRIBER_TOPIC = os.environ.get('SUBSCRIBER_TOPIC', 'No value set')
 PUBLISHER_TOPIC = os.environ.get('PUBLISHER_TOPIC', 'No value set')
 
+print(BROKER_ADDRESS)
+print(BROKER_PORT)
+print(CLIENT_ID)
+print(SUBSCRIBER_TOPIC)
+print(PUBLISHER_TOPIC)
+
 client = None
 
 data_construct = {
@@ -55,75 +62,84 @@ data_construct = {
      }
 }
 
-def last_message(client):
+# For testing
+#def read_light_sensor():
+#    return 10
+
+#def read_temperature_humidity():
+#    return 100, 20
+
+def last_message():
     """ Send a last response after disabling publishing or before closing the
     app in order to handle the callback on the client side
 
     Returns nothing """
-    readings = {
-        'timestamp': 0,
-        'illuminance': read_light_sensor(),
-        'thing_id': 1,
+    global client
+    payload = {
+        'timestamp': datetime.now().isoformat(),
+        'type': 'publish', 
+        'data': {
+            'illuminance': read_light_sensor(),
+            'thing_id': 1,
+        },
         'publishing': False,
     }
-    client.publish(TOPIC, json.dumps(readings))
+    send_data = deepcopy(data_construct)
+    send_data['state']['desired'] = payload
+    client.publish(PUBLISHER_TOPIC, json.dumps(send_data), 0)
     return
 
 
 def on_message(client, userdata, message):
     print('Message received=%s' % str(message.payload.decode('utf-8')))
     print('Message topic=%s' % (message.topic))
-    """try:
-        utf8_message = str(message.payload.decode('utf-8'))
-        message = json.loads(utf8_message)
-        global publishing
-        global publishing_thread
-        print(message)
-        if message.get('terminate'):
-            global terminate
-            global listening
-            listening = False
-            publishing = False
-            client.disconnect()
-            client.loop_stop()
-            terminate = True    
+    global publishing
+    global publishing_thread
 
-        if message.get('publishing'):
-            publishing = True
-            if not publishing_thread.is_alive():
-                publishing_thread = Thread(target=publish)
-                publishing_thread.daemon = True
-                publishing_thread.start()
-        else:
-            # Send last reading before turning off to also change button
-            last_message(client)
-            publishing = False
-            print("Not Publishing")
-            
-    except ValueError as value_error:
-        print('The received message had an ill formed data object')
-    except Exception as error:
-        print('An error occurred')
-        print(error)"""
+    try:
+        payload = json.loads(message.payload.decode('utf-8'))
+        print("PAYLOAD")
+        print(payload)
+        if payload.get('type') == 'listen':
+            if payload.get('publishing'):
+                if not publishing_thread.is_alive():
+                    publishing = True
+                    publishing_thread = Thread(target=publish)
+                    publishing_thread.daemon = True
+                    publishing_thread.start()
+            else:
+                last_message()
+                publishing = False
+                print("Not Publishing")
+    except KeyError as key_error:
+        print(f'A key error occurred: {key_error}')
+        print(f'Payload data: {message.payload.decode("utf-8")}')
+        print(f'For topic: {message.topic}')
 
 
 def publish():
     """ Read all sensors and publish the results to the MQTT broker """
     print("Publishing Thread")
-    client = start_client(CLIENT_ID)
+    global client
+    global publishing
     while publishing:
         illuminance = read_light_sensor()
         temp, hum = read_temperature_humidity()
-        readings = {
+        payload = {
             'timestamp': datetime.now().isoformat(),
-            'illuminance': read_light_sensor(),
-            'temperature': temp,
-            'humidity': hum,
-            'raspberry_pi': 1
+            'type':'publish',
+            'data': {
+                'illuminance': read_light_sensor(),
+                'temperature': temp,
+                'humidity': hum,
+            },
+            'thing_id': CLIENT_ID,
+            'publishing': True,
         }
-        client.publish(PUBLISHER_TOPIC, json.dumps(readings))
-        print('Published readings: ', readings)
-        client.loop(.1)
+        send_data = deepcopy(data_construct)
+        send_data['state']['desired'] = payload
+        client.publish(PUBLISHER_TOPIC, json.dumps(send_data), 0)
+        print('Published readings: ', payload)
         time.sleep(10)
     print('Stop publishing.')
 
@@ -132,11 +148,11 @@ def listen(publisher):
     """ Listen for new messages on subscribed topic, start the publisher and
 
     """
-    client = start_client(CLIENT_ID)
+    global client
     client.subscribe(SUBSCRIBER_TOPIC, 1, on_message)
     print('Subscribed to topic.')
     while listening:
-        client.loop(.1)
+        time.sleep(10)
     
 
 def start_client(client_id):
@@ -148,7 +164,7 @@ def start_client(client_id):
     # Configurations
     # For TLS mutual authentication
     client.configureEndpoint(BROKER_ADDRESS, BROKER_PORT)
-    client.configureCredentials("keys1/AmazonRootCA1.pem", "keys1/private.pem.key", "keys1/cert.pem.crt")
+    client.configureCredentials("keys/AmazonRootCA1.pem", "keys/private.pem.key", "keys/cert.pem.crt")
     client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
     client.configureDrainingFrequency(2)  # Draining: 2 Hz
     client.configureConnectDisconnectTimeout(10)  # 10 sec
@@ -160,6 +176,8 @@ def start_client(client_id):
 def main():
     global publishing_thread
     global listen_thread
+    global client
+    client = start_client(CLIENT_ID)
     publishing_thread = Thread(target=publish)
     publishing_thread.daemon = True
     listen_thread = Thread(target=listen, args=(publishing_thread,))
