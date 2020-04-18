@@ -58,7 +58,8 @@ client = None
 
 data_construct = {
     "state" : {
-        "desired" : {}
+        "desired" : {},
+        "reported" : {}
      }
 }
 
@@ -86,6 +87,7 @@ def last_message():
     }
     send_data = deepcopy(data_construct)
     send_data['state']['desired'] = payload
+    send_data['state']['reported'] = payload
     client.publish(PUBLISHER_TOPIC, json.dumps(send_data), 0)
     return
 
@@ -138,6 +140,7 @@ def publish():
         }
         send_data = deepcopy(data_construct)
         send_data['state']['desired'] = payload
+        send_data['state']['reported'] = payload
         client.publish(PUBLISHER_TOPIC, json.dumps(send_data), 0)
         print('Published readings: ', payload)
         time.sleep(10)
