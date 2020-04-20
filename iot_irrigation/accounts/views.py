@@ -48,7 +48,7 @@ def register(request):
             user = registration_form.save()
 
             user = auth.authenticate(username=request.POST.get('username'),
-                                     password=request.POST.get('password'))
+                                     password=request.POST.get('password1'))
             if user:
                 auth.login(user=user, request=request)
                 return redirect(reverse('things_index'))
