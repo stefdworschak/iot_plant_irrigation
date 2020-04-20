@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="row login-row">
+        <div class="col-2"></div>
+        <div class="col-6">
+
+            <div class="card register-form-card">
+                <div class="card-body">
+                    <div class="card-title"><h2>Register an Account</h2></div>
+                    <div class="card-text">
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Username</span>
+                                </div>
+                                {{ registration_form.username }}
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Password</span>
+                                </div>
+                                {{ registration_form.password1 }}
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Confirm Password</span>
+                                </div>
+                                {{ registration_form.password2 }}
+                            </div>
+                            
+                            <button class="btn btn-primary" type="submit">Register</button>
+                        </form>
+                        <hr />
+                        <a role="button" href="/" class="btn btn-danger" >Login</a>
+                        
+                        {% if registration_form.errors %}
+                            <div class="alert alert-danger registration-errors">
+                                {% for message in messages %}
+                                    {{ message }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+            </div>
+
+            
+        </div>
+        <div class="col-2"></div>
+
+
+    </div>
+</div>
+
+{% endblock %}

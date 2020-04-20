@@ -7,3 +7,4 @@ tips.txt
 aws_iot/
 test_mqtt.py
 raspberry_pi/keys.py
+env_vars.py

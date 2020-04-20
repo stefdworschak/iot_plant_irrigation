@@ -1,0 +1,52 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "iot:Connect",
+        "Resource": "arn:aws:iot:eu-west-1:790430310068:client/%s"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Publish",
+        "Resource": [
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/update",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/delete",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/get"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Receive",
+        "Resource": [
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/update/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/delete/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/get/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/update/rejected",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/delete/rejected",
+          "arn:aws:iot:eu-west-1:790430310068:topic/$aws/things/%s/shadow/update/delta"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Subscribe",
+        "Resource": [
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/update/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/delete/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/get/accepted",
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/update/rejected",
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/delete/rejected",
+          "arn:aws:iot:eu-west-1:790430310068:topicfilter/$aws/things/%s/shadow/update/delta"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "iot:GetThingShadow",
+          "iot:UpdateThingShadow",
+          "iot:DeleteThingShadow"
+        ],
+        "Resource": "arn:aws:iot:eu-west-1:790430310068:thing/%s"
+      }
+    ]
+  }

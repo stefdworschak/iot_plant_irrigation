@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<div class="container-fluid">
+    <br />
+    <div class="row">
+        <div class="col-6">
+            <canvas id="temp-line-chart" width="300" height="400"></canvas>
+        </div>
+        <div class="col-6">
+            <canvas id="hum-line-chart" width="300" height="400"></canvas>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <canvas id="ill-line-chart" width="300" height="400"></canvas>
+        </div>
+        <div class="col-6">
+            <h2>Weather Forecast (hourly, 48 hrs)</h2>
+            <div id="forecast-table" style="max-height:300px; overflow-y: scroll;"></div>
+        </div>
+    </div>
+</div>
+<script>
+    var dashboardData = {{dashboard_data|safe}};
+    var weatherData = {{weather_data|safe}};
+</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

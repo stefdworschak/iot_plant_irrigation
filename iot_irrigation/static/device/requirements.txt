@@ -1,0 +1,6 @@
+asgiref==3.2.7
+AWSIoTPythonSDK==1.4.8
+paho-mqtt==1.5.0
+pep8==1.7.1
+pytz==2019.3
+sqlparse==0.3.1

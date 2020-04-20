@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+{% load tags %}
+<script src="{% static 'js/things.js' %}"></script>
+<div class="container">
+    <br />
+    <div class="row">
+        <div class="col-12">
+
+
+            <div class="card things-card">
+                <div class="card-header">My Things</div>
+                <div class="card-body">
+                    
+                    {% if things|length < 4 %}
+                    <div class="row">
+                        
+                        <div class="card add-thing-form">
+                            <div class="card-body">
+
+                                <div class="card-title">
+                                    Add New Thing
+                                </div>
+                                <div class="card-text">
+                                    <form action="add_thing" method="POST" id="add_thing">
+                                        {% csrf_token %}
+                
+                                        <div class="form-group">
+                                            <input type="text" name="display_name" class="form-control" 
+                                                    placeholder="Display Name" required />
+                                        </div>
+                
+                                        <div class="form-group">
+                                            <input type="submit" class="btn btn-primary" />
+                                        </div>
+                                    </form>
+
+                                </div>
+
+                                <div class="row">
+                                    <div class="alert alert-danger error-output">
+                                    </div>
+
+                                    {% if messages %}
+                                        {% for message in messages%}
+                                            {% if message.tags == 'error' %}
+                                                <div class="alert alert-danger">{{message}}</div>
+                                            {% else %}
+                                                <div class="alert alert-success">{{message}}</div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+                        </div>  
+
+                    </div>
+                    {% else %}
+                    <div class="alert alert-primary">You have reached the max. number of things in your subscription. Please upgrade your subscription or delete some of your things to add a new thing.</div>
+                    {% endif %}
+
+                    <hr />
+                    {% if things %}
+                        <div class="row display-thing">
+                            {% for thing in things %}
+                                    <div class="card">
+                                        <div class="delete-thing">
+                                            <form action="delete_thing" method="POST">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="thing_id" value="{{thing.thing_name}}" />
+                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-times-circle"></i></button>
+                                            </form>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="card-title">
+                                                {% if thing.display_name|length > 20 %}
+                                                <h2>{{ thing.display_name|slice:"0:20" }}...</h2>
+                                                {% else %}
+                                                <h2>{{ thing.display_name }}</h2>
+                                                {% endif %}
+                                            </div>
+                                            <div class="card-text">
+                                                <div class="alert alert-primary thing-id">
+                                                    {{ thing.thing_name }}
+                                                </div>
+                                                <div class="alert alert-secondary thing-rules">
+                                                    <ul>    
+                                                        {% if rules|index_length:thing.thing_name == 0 %}
+                                                            <li>No rules added yet.</li>
+                                                        {% else %}
+                                                            {% for rule in rules|index:thing.thing_name %}
+                                                                <li>{{ rule.action }} when: {{ rule.rule }}</li>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <!--<form action="add_rule_for_thing" method="POST" style="display:inline-block">
+                                                        <input type="hidden" name="thing_id" value="{{thing.thing_name}}" />
+                                                        <button class="btn btn-success" type="submit">Add Rule</button>
+                                                    </form>-->
+                                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target=".bd-example-modal-lg">Add Rule</button>
+                                                    <a role="button" href="{{ thing.credentials_url }}" class="btn btn-primary" download>Download Device Files</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Rule Modal -->
+                                    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h3>Add a Rule</h3>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <form action="add_topic_rule" method="POST" style="display:inline-block">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="thing_id" value="{{thing.thing_name}}" />
+                                                        <div class="form-group">
+                                                            <table>
+                                                                <tr>
+                                                                    <th>Action</th>
+                                                                    <th>Measure</th>
+                                                                    <th>Operator</th>
+                                                                    <th>Value</th>
+                                                                </tr>
+                                
+                                                                <tr>
+                                                                    <td>
+                                                                        <select class="form-control add-rule"
+                                                                            name="rule_action">
+                                                                            <option value="water_plant">Water Plant</option>
+                                                                            <option value="publish_off">Turn Publish Off</option>
+                                                                            <option value="publish_on">Turn Publish On</option>
+                                                                        </select>
+                                                                    </td>
+                                                                    <td>
+                                                                        <select class="form-control add-rule"
+                                                                            name="rule_measure">
+                                                                            <option value="temperature">Temperature</option>
+                                                                            <option value="humidity">Humidity</option>
+                                                                            <option value="illumninance">Illumninance</option>
+                                                                        </select>
+                                                                    </td>
+                                                                    <td>
+                                                                        <select class="form-control add-rule"
+                                                                            name="rule_operator">
+                                                                            <option>=</option>
+                                                                            <option>!=</option>
+                                                                            <option>&gt;</option>
+                                                                            <option>&gt;=</option>
+                                                                            <option>&lt;</option>
+                                                                            <option>&lt;=</option>
+                                                                        </select>                                 
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="number" step="0.01" name="rule_value" class="form-control add-rule" maxlength="32" />
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </div>
+                                                        <button class="btn btn-primary" type="submit">Confirm</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="row">No things found.</div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

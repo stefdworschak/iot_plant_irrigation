@@ -1,0 +1,76 @@
+.row {
+    margin:0px;
+}
+.error-output {
+    display:none;
+    margin-top: 10px;
+}
+
+.card.things-card {
+    height:90vh;
+    border-radius: 0px;
+}
+
+.card.things-card > .card-header {
+    background: #343a40!important;
+    min-height:45px;
+    padding:10px;
+    color: white;
+    border-radius: 0px;
+    padding-left: 30px;
+}
+
+.card.things-card > .card-body {
+    padding:30px;
+    border-radius: 0px;
+}
+
+.card.add-thing-form {
+    background: #f2f2f2;
+    width:100%; 
+}
+
+.card.add-thing-form > .card-body > .card-text > form > .form-group > input {
+    width: fit-content;
+}
+
+
+.row.display-thing > .card {
+    
+    float:left;
+    margin:20px;
+    width: 450px;
+    overflow:hidden;
+    padding:15px;
+    
+}
+
+.delete-thing {
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+.delete-thing > form > button {
+    border-radius: 50%;
+}
+
+.alert.alert-primary.thing-id {
+    padding: 5px 10px 5px 10px;
+    font-size: 0.8em;
+}
+
+.form-control.add-rule {
+    display: inline-block;
+    min-width: 150px;
+    width: 100%;
+}
+
+.alert.alert-secondary.thing-rules > ul{
+    font-size: 0.8em;
+    margin:0px;
+}
+.alert.alert-secondary.thing-rules > ul > li {
+    list-style-type: circle;
+    margin:0px;
+}
