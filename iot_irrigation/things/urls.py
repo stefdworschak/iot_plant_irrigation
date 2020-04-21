@@ -7,4 +7,6 @@ urlpatterns = [
     path('add_thing', views.add_thing, name='add_thing'),
     path('delete_thing', views.delete_thing, name='delete_thing'),
     path('add_topic_rule', views.add_topic_rule, name='add_topic_rule'),
+    path('change_status', views.change_status, name='change_status'),
+    
 ]

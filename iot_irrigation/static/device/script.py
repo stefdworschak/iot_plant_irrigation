@@ -64,7 +64,6 @@ def water_plant():
     global watered_timestamp
     watered_timestamp = datetime.now().isoformat()
     write_to_lcd("Watering of plants in progress")
-
     return
 
 
@@ -107,12 +106,13 @@ def on_message(client, userdata, message):
 
     try:
         payload = json.loads(message.payload.decode('utf-8'))
-        if payload.get('type') == 'listen':
-            if payload.get('action') == 'water_plant':
+        data = payload.get('state').get('desired')
+        if data.get('type') == 'listen':
+            if data.get('action') == 'water_plant':
                 water_plant()
                 return
 
-            if payload.get('publishing'):
+            if data.get('publishing'):
                 if not publishing_thread.is_alive():
                     publishing = True
                     publishing_thread = Thread(target=publish)

@@ -1,3 +1,6 @@
+
+import time
+
 # Import 3rd party modules
 import grovepi
 from grovepi import *
@@ -27,11 +30,16 @@ def read_temperature_humidity():
 
 
 def write_to_lcd(text):
+    setRGB(0,255,0)
     setText_norefresh(text)
+    time.sleep(10)
+    setText("")
+    return
 
 
 def reset_lcd():
     setText("")
     setRGB(0,0,0)
+    return
 
 

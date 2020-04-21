@@ -97,19 +97,29 @@
                                                     </ul>
                                                 </div>
                                                 <div>
-                                                    <!--<form action="add_rule_for_thing" method="POST" style="display:inline-block">
-                                                        <input type="hidden" name="thing_id" value="{{thing.thing_name}}" />
-                                                        <button class="btn btn-success" type="submit">Add Rule</button>
-                                                    </form>-->
-                                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target=".bd-example-modal-lg">Add Rule</button>
-                                                    <a role="button" href="{{ thing.credentials_url }}" class="btn btn-primary" download>Download Device Files</a>
+
+                                                    
+                                                        <form action="change_status" method="POST" style="display:inline;">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="thing_id" value="{{thing.thing_name}}" />
+                                                            {% if thing.turned_on == False %}
+                                                                <button type="submit" class="btn btn-success">Turn On</button>
+                                                            {% else %}
+                                                                <button type="submit" class="btn btn-secondary" role="submit">Turn Off</button>
+                                                            {% endif %}
+                                                        </form>
+                                                            
+                                                    
+
+                                                    <button type="button" class="btn btn-warning" data-toggle="modal" data-target=".{{thing.thing_name}}">Add Rule</button>
+                                                    <a role="button" href="{{ thing.credentials_url }}" class="btn btn-primary" download>Setup Files</a>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <!-- Rule Modal -->
-                                    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                    <div class="modal fade bd-example-modal-lg {{thing.thing_name}}" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">

@@ -1,6 +1,11 @@
 from datetime import datetime
 import hashlib
 import json
+import os
+
+import boto3
+
+import env_vars
 
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.decorators import login_required
@@ -9,6 +14,7 @@ from django.forms.models import model_to_dict
 from django.contrib import messages
 
 from things.models import Thing, ThingRule
+from dashboard.models import Record
 
 from .aws_iot import (list_things, create_thing, create_credentials,
                       create_policy, attach_policy, create_thing_name,
@@ -16,6 +22,9 @@ from .aws_iot import (list_things, create_thing, create_credentials,
                       delete_iot_thing, create_iot_rule)
 
 from .helper import add_to_zip, delete_from_s3
+
+ACCESS_KEY =  os.environ.get('S3_ACCESS_KEY', 'No value set')
+SECRET_KEY =  os.environ.get('S3_SECRET_KEY', 'No value set')
 
 @login_required(redirect_field_name=None, login_url='/')
 def things(request):
@@ -91,12 +100,46 @@ def add_topic_rule(request):
     rule_params = "%s %s %s" % (measure, operator, val)
     thing = Thing.objects.get(thing_name=request.POST.get('thing_id'))
     rules = thing.rules.all()
-    rule_num = rules.count()
-    if rule_num < 3:
-        topic_rule = create_iot_rule(thing_name, rule_action, rule_params, str(rule_num))   
+    print(rules)
+    rule_num = rules.count()+1
+
+    if rule_num < 4:
+        topic_rule = create_iot_rule(thing_name, rule_action, rule_params, str(rule_num)) 
         rule = ThingRule.objects.create(thing=thing, rule=rule_params, action=rule_action)
-        thing.rules.add(rule) 
+        thing.rules.add(rule)
     else:
         messages.error(request, "You alreay have 3 topic rules. Please upgrade your subscription or delete some of your rules to add a new rule.")
 
+    return redirect(reverse('things_index'))
+
+@login_required(redirect_field_name=None, login_url='/')
+def change_status(request):
+    thing_name = request.POST.get('thing_id')
+    thing = Thing.objects.get(thing_name=thing_name)
+
+    client = boto3.client('iot-data', region_name='eu-west-1', 
+                          aws_access_key_id=ACCESS_KEY,
+                          aws_secret_access_key=SECRET_KEY)
+    
+    payload = {
+        "state" : {
+            "desired" : {
+                'type':'listen',
+                'publishing': (not thing.turned_on)
+            },
+            "reported" : {
+                'type':'listen',
+                'publishing': (not thing.turned_on)
+            }
+        }
+    }
+
+    
+    response = client.publish(
+        topic='$aws/things/%s/shadow/update/accepted' % thing_name,
+        qos=1,
+        payload=json.dumps(payload)
+        )
+    thing.turned_on = (not thing.turned_on)
+    thing.save()
     return redirect(reverse('things_index'))
